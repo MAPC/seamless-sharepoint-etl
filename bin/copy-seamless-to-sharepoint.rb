@@ -15,7 +15,7 @@ APP_ROOT = File.expand_path("..", __dir__)
 Dotenv.load("#{APP_ROOT}/.env")
 template = ERB.new File.new("#{APP_ROOT}/config/settings.yml").read
 SETTINGS = YAML.load template.result(binding)
-# ENV['OAUTH_DEBUG'] = 'true'
+COLUMN_VALUES = ['description', 'vendor', 'charge code', 'receipt_qFP', 'picker_erk']
 
 logger = Logger.new("#{APP_ROOT}/log/seamless-to-sharepoint.log")
 logger.level = Logger::INFO
@@ -27,10 +27,6 @@ logger.level = Logger::INFO
 #                <timestamp>
 # See: http://developers.seamlessdocs.com/v1.2/docs/signing-requests#signature-base
 #
-# The HTTPRequestURI component is the HTTP absolute path component of the
-# URI up to, but not including, the query string. If the HTTPRequestURI is
-# empty, use a forward slash ( / ).
-#
 def seamless_api_signature(request_uri, request_method, timestamp)
   key = SETTINGS['seamless']['secret']
   data = request_method + '+' +
@@ -40,12 +36,12 @@ def seamless_api_signature(request_uri, request_method, timestamp)
 end
 
 def microsoft_oauth2_token
+  # See: https://docs.microsoft.com/en-us/graph/auth-v2-user#2-get-authorization
+  # https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-v2-python-daemon
   client = OAuth2::Client.new(SETTINGS['microsoft']['client_id'],
                               SETTINGS['microsoft']['client_secret'],
                               authorize_url: 'https://login.microsoftonline.com/c75d8168-fa8e-4753-8aef-55111ae727bd/oauth2/v2.0/authorize',
                               token_url: 'https://login.microsoftonline.com/c75d8168-fa8e-4753-8aef-55111ae727bd/oauth2/v2.0/token')
-  # See: https://docs.microsoft.com/en-us/graph/auth-v2-user#2-get-authorization
-  # https://docs.microsoft.com/en-us/azure/active-directory/develop/quickstart-v2-python-daemon
 
   client.client_credentials.get_token(scope: 'https://graph.microsoft.com/.default')
 end
@@ -75,25 +71,39 @@ def get_seamless_form_data(form_id = 'CO20041000144715117')
     request.headers['AuthDate'] = timestamp
     request.headers['Authorization'] = "HMAC-SHA256 api_key=#{SETTINGS['seamless']['api_key']} signature=#{signature}"
   end
+
+  # Get column machine names from seamless
+  puts pp JSON.parse(response.body).to_hash['columns']
+                                   .values
+                                   .filter { |hash| COLUMN_VALUES.include?(hash['printable_name']) }
+                                   .map { |hash| hash['column_id'] }
+# TODO:  Grab the values from those column names for each entry
+
 end
 
 def add_seamless_data_to_sharepoint
+  connection = Faraday.new 'https://graph.microsoft.com' do |conn|
+    conn.headers['Authorization'] = "Bearer #{microsoft_oauth2_token.token}"
+    conn.adapter Faraday.default_adapter
+  end
   # POST /workbook/worksheets/{id|name}/tables/{id|name}/rows/add
-    # resp = connection.post('v1.0/me/drive/root:/api-test.xlsx:/workbook/worksheets/Sheet1/tables/add') do |req|
-    #   req.params['limit'] = 100
-    #   req.body = {
-    #               "index": null,
-    #               "values": [
-    #                 [
-    #                   "Luke Skywalker",
-    #                   "luke@skywalker.com",
-    #                   "test",
-    #                   "value"
-    #                 ]
-    #               ]
-    #             }.to_json
-    # end
+  response = connection.post('/v1.0/sites/mapc365.sharepoint.com,86503781-e6fa-4516-abbf-879f74eaac01,4a7dbaee-d756-4a4b-b1f5-897b4f3c31a2/drive/root:/Digital%20Municipal%20Work/Seamless%20API%20Test.xlsx:/workbook/worksheets/Sheet1/tables/Table1/rows/add') do |req|
+    req.body = {
+                "index": nil,
+                "values": [
+                  [
+                    "Luke Skywalker",
+                    "luke@skywalker.com",
+                    "test",
+                    "value",
+                    "8"
+                  ]
+                ]
+              }.to_json
+  end
 end
 
 get_last_entry_from_sharepoint
-# TODO: Push input data to Microsoft Sharepoint Document table
+get_seamless_form_data
+# TODO: push the new rows to SharePoint
+
