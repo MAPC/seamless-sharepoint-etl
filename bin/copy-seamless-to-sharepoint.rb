@@ -15,7 +15,7 @@ APP_ROOT = File.expand_path("..", __dir__)
 Dotenv.load("#{APP_ROOT}/.env")
 template = ERB.new File.new("#{APP_ROOT}/config/settings.yml").read
 SETTINGS = YAML.load template.result(binding)
-COLUMN_VALUES = ['description', 'vendor', 'charge code', 'receipt_qFP', 'picker_erk']
+COLUMN_VALUES = ['vendor', 'description', 'picker_erk', 'charge code', 'receipt_qFP']
 
 logger = Logger.new("#{APP_ROOT}/log/seamless-to-sharepoint.log")
 logger.level = Logger::INFO
@@ -56,10 +56,9 @@ def get_last_entry_from_sharepoint
   # GET /sites/{site-id}/drive/root:/{item-path}
   response = connection.get("/v1.0/sites/mapc365.sharepoint.com,86503781-e6fa-4516-abbf-879f74eaac01,4a7dbaee-d756-4a4b-b1f5-897b4f3c31a2/drive/root:/Digital%20Municipal%20Work/Seamless%20API%20Test.xlsx:/workbook/worksheets/Sheet1/tables/Table1/rows")
 
-  puts JSON.parse(response.body)
-            .to_hash['value']
-            .sort_by { |item| item.values[4] }
-            .last['values'][0][4]
+  JSON.parse(response.body)
+      .to_hash['value']
+      .last['values'][0][4]
 end
 
 def get_seamless_form_data(form_id = 'CO20041000144715117')
@@ -73,15 +72,25 @@ def get_seamless_form_data(form_id = 'CO20041000144715117')
   end
 
   # Get column machine names from seamless
-  puts pp JSON.parse(response.body).to_hash['columns']
-                                   .values
-                                   .filter { |hash| COLUMN_VALUES.include?(hash['printable_name']) }
-                                   .map { |hash| hash['column_id'] }
-# TODO:  Grab the values from those column names for each entry
+  columns = JSON.parse(response.body).to_hash['columns']
+                                     .values
+                                     .filter { |hash| COLUMN_VALUES.include?(hash['printable_name']) }
 
+  sorted_columns = COLUMN_VALUES.map { |value| columns.select { |column| column['printable_name'] == value } }
+                                .map { |hash| hash[0]['column_id'] }
+
+  values_formatted_for_microsoft = []
+  JSON.parse(response.body)['items'].each do |item|
+    item_data = []
+    sorted_columns.each do |column|
+      item_data << item['application_data'][column]
+    end
+    values_formatted_for_microsoft << item_data
+  end
+  return values_formatted_for_microsoft
 end
 
-def add_seamless_data_to_sharepoint
+def add_seamless_data_to_sharepoint(data)
   connection = Faraday.new 'https://graph.microsoft.com' do |conn|
     conn.headers['Authorization'] = "Bearer #{microsoft_oauth2_token.token}"
     conn.adapter Faraday.default_adapter
@@ -90,20 +99,20 @@ def add_seamless_data_to_sharepoint
   response = connection.post('/v1.0/sites/mapc365.sharepoint.com,86503781-e6fa-4516-abbf-879f74eaac01,4a7dbaee-d756-4a4b-b1f5-897b4f3c31a2/drive/root:/Digital%20Municipal%20Work/Seamless%20API%20Test.xlsx:/workbook/worksheets/Sheet1/tables/Table1/rows/add') do |req|
     req.body = {
                 "index": nil,
-                "values": [
-                  [
-                    "Luke Skywalker",
-                    "luke@skywalker.com",
-                    "test",
-                    "value",
-                    "8"
-                  ]
-                ]
+                "values": data
               }.to_json
   end
 end
 
-get_last_entry_from_sharepoint
-get_seamless_form_data
+def receipt_qfp_to_i(receipt_qFP)
+  receipt_qFP.delete_prefix('U')
+             .chop
+             .to_i
+end
+
+
+
+puts receipt_qfp_to_i(get_last_entry_from_sharepoint)
+# add_seamless_data_to_sharepoint(get_seamless_form_data)
 # TODO: push the new rows to SharePoint
 
