@@ -55,13 +55,14 @@ def get_last_entry_from_sharepoint
 
   # GET /sites/{site-id}/drive/root:/{item-path}
   response = connection.get("/v1.0/sites/mapc365.sharepoint.com,86503781-e6fa-4516-abbf-879f74eaac01,4a7dbaee-d756-4a4b-b1f5-897b4f3c31a2/drive/root:/Digital%20Municipal%20Work/Seamless%20API%20Test.xlsx:/workbook/worksheets/Sheet1/tables/Table1/rows")
-
-  JSON.parse(response.body)
-      .to_hash['value']
-      .last['values'][0][4]
+  purchase_order_number = JSON.parse(response.body)
+                              .to_hash['value']
+                              .last['values'][0][4]
+  puts 'Last Seamless Purchase Order Number: ' + purchase_order_number
+  return purchase_order_number
 end
 
-def get_seamless_form_data(form_id = 'CO20041000144715117')
+def get_seamless_form_data(form_id = 'CO20041000144715117', purchase_order_number = 'U0000001D')
   request_uri = "https://mapc.seamlessdocs.com/api/form/#{form_id}/pipeline"
   timestamp = Time.now.to_i.to_s
   signature = seamless_api_signature(request_uri, 'GET', timestamp)
@@ -72,7 +73,7 @@ def get_seamless_form_data(form_id = 'CO20041000144715117')
     request.params['filters'] = { '0': {
             'column': 'gen_div_receipt_R4IzKQ',
             'operand': 'is greater than',
-            'value': 'U0000001D'
+            'value': purchase_order_number
           }
         }
     request.params['order_by'] = 'gen_div_receipt_R4IzKQ'
@@ -95,6 +96,9 @@ def get_seamless_form_data(form_id = 'CO20041000144715117')
     end
     values_formatted_for_microsoft << item_data
   end
+
+  puts 'New items to upload: ' + values_formatted_for_microsoft.count.to_s
+
   return values_formatted_for_microsoft
 end
 
@@ -112,16 +116,4 @@ def add_seamless_data_to_sharepoint(data)
   end
 end
 
-def receipt_qfp_to_i(receipt_qFP)
-  receipt_qFP.delete_prefix('U')
-             .chop
-             .to_i
-end
-
-# get_seamless_form_data
-
-# get_last_entry_from_sharepoint
-# puts receipt_qfp_to_i(get_last_entry_from_sharepoint)
-add_seamless_data_to_sharepoint(get_seamless_form_data)
-# TODO: push the new rows to SharePoint
-
+add_seamless_data_to_sharepoint(get_seamless_form_data('CO20041000144715117', get_last_entry_from_sharepoint))
