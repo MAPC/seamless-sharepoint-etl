@@ -69,6 +69,14 @@ def get_seamless_form_data(form_id = 'CO20041000144715117')
   response = Faraday.get(request_uri) do |request|
     request.headers['AuthDate'] = timestamp
     request.headers['Authorization'] = "HMAC-SHA256 api_key=#{SETTINGS['seamless']['api_key']} signature=#{signature}"
+    request.params['filters'] = { '0': {
+            'column': 'gen_div_receipt_R4IzKQ',
+            'operand': 'is greater than',
+            'value': 'U0000001D'
+          }
+        }
+    request.params['order_by'] = 'gen_div_receipt_R4IzKQ'
+    request.params['order_by_direction'] = 'ASC'
   end
 
   # Get column machine names from seamless
@@ -110,9 +118,10 @@ def receipt_qfp_to_i(receipt_qFP)
              .to_i
 end
 
+# get_seamless_form_data
 
-
-puts receipt_qfp_to_i(get_last_entry_from_sharepoint)
-# add_seamless_data_to_sharepoint(get_seamless_form_data)
+# get_last_entry_from_sharepoint
+# puts receipt_qfp_to_i(get_last_entry_from_sharepoint)
+add_seamless_data_to_sharepoint(get_seamless_form_data)
 # TODO: push the new rows to SharePoint
 
