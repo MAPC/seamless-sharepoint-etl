@@ -15,7 +15,7 @@ APP_ROOT = File.expand_path("..", __dir__)
 Dotenv.load("#{APP_ROOT}/.env")
 template = ERB.new File.new("#{APP_ROOT}/config/settings.yml").read
 SETTINGS = YAML.load template.result(binding)
-COLUMN_VALUES = ['vendor', 'description', 'picker_erk', 'charge code', 'receipt_qFP']
+COLUMN_VALUES = ['vendor', 'description', 'picker_dateby', 'charge_code', 'purchase_order#']
 
 logger = Logger.new("#{APP_ROOT}/log/seamless-to-sharepoint.log")
 logger.level = Logger::INFO
@@ -74,12 +74,12 @@ def get_seamless_form_data(form_id = 'CO20041000144832633', purchase_order_numbe
     request.headers['AuthDate'] = timestamp
     request.headers['Authorization'] = "HMAC-SHA256 api_key=#{SETTINGS['seamless']['api_key']} signature=#{signature}"
     request.params['filters'] = { '0': {
-            'column': 'gen_div_receipt_R4IzKQ',
+            'column': 'gen_div_receipt_WYeaF3',
             'operand': 'is greater than',
             'value': purchase_order_number
           }
         }
-    request.params['order_by'] = 'gen_div_receipt_R4IzKQ'
+    request.params['order_by'] = 'gen_div_receipt_WYeaF3'
     request.params['order_by_direction'] = 'ASC'
   end
 
