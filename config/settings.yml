@@ -1,11 +1,7 @@
 microsoft: # https://aad.portal.azure.com/#blade/Microsoft_AAD_RegisteredApps/ApplicationMenuBlade/Overview/
   client_id: <%= ENV['MICROSOFT_CLIENT_ID'] %>
   client_secret: <%= ENV['MICROSOFT_CLIENT_SECRET'] %>
-  authorization_url: <%= ENV['MICROSOFT_AUTHORIZATION_URL'] %>
-  access_token_url: <%= ENV['MICROSOFT_ACCESS_TOKEN'] %>
   scope: 'offline_access Files.ReadWrite.All'
-  username: <%= ENV['MICROSOFT_USERNAME'] %>
-  password: <%= ENV['MICROSOFT_PASSWORD'] %>
 seamless: # https://mapc.seamlessdocs.com/account/api_management
   api_key: <%= ENV['SEAMLESS_API_KEY'] %>
   secret: <%= ENV['SEAMLESS_SECRET'] %>

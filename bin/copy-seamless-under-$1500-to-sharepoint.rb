@@ -17,8 +17,11 @@ template = ERB.new File.new("#{APP_ROOT}/config/settings.yml").read
 SETTINGS = YAML.load template.result(binding)
 COLUMN_VALUES = ['vendor', 'description', 'picker_erk', 'charge code', 'receipt_qFP']
 
-logger = Logger.new("#{APP_ROOT}/log/seamless-to-sharepoint.log")
-logger.level = Logger::INFO
+def logger
+  logger = Logger.new("#{APP_ROOT}/log/seamless-to-sharepoint.log")
+  logger.level = Logger::INFO
+  return logger
+end
 
 # Create the string to sign according to the following pseudo-grammar
 #
@@ -61,7 +64,7 @@ def get_last_entry_from_sharepoint
   purchase_order_number = JSON.parse(response.body)
                               .to_hash['value']
                               .last['values'][0][4]
-  puts 'Last Seamless Purchase Order Number: ' + purchase_order_number.to_s
+  logger.info('Last Seamless Purchase Order Number: ' + purchase_order_number.to_s)
   return purchase_order_number
 end
 
@@ -100,7 +103,7 @@ def get_seamless_form_data(form_id = 'CO20041000144715117', purchase_order_numbe
     values_formatted_for_microsoft << item_data
   end
 
-  puts 'New items to upload: ' + values_formatted_for_microsoft.count.to_s
+  logger.info('New items to upload: ' + values_formatted_for_microsoft.count.to_s)
 
   return values_formatted_for_microsoft
 end
