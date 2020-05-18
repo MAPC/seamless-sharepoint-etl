@@ -57,7 +57,7 @@ def get_last_entry_from_sharepoint
   # GET ${site-id} https://graph.microsoft.com/v1.0/sites/mapc365.sharepoint.com:/sites/MAPCRemoteAccess
   # https://mapc365.sharepoint.com/:x:/r/sites/MAPCRemoteAccess/_layouts/15/Doc.aspx?sourcedoc=%7B086954b0-3d25-4603-9432-98c26b03022c%7D&action=editnew
                                                                 # 82ba543e-c9dc-4290-b233-2fbe945b1663,efce3e26-d709-4bc3-ac1c-9900fe5e4fbf
-  response = connection.get("/v1.0/sites/mapc365.sharepoint.com,f8550c28-5d48-4bb6-b7e3-67e9ef5505bf,1f0b2eb3-61f4-4cdd-82ce-95daa35ba30f/drive/root:/Purchasing%20and%20Contract%20Process/Purchase%20Orders.xlsx:/workbook/tables/Table1/rows")
+  response = connection.get("/v1.0/sites/mapc365.sharepoint.com,f8550c28-5d48-4bb6-b7e3-67e9ef5505bf,1f0b2eb3-61f4-4cdd-82ce-95daa35ba30f/drive/root:/Purchasing%20and%20Contract%20Process/Purchase%20Orders.xlsx:/workbook/tables/Table13/rows")
   purchase_order_number = JSON.parse(response.body)
                               .to_hash['value']
                               .last['values'][0][4]
@@ -65,7 +65,7 @@ def get_last_entry_from_sharepoint
   return purchase_order_number
 end
 
-def get_seamless_form_data(form_id = 'CO20041000144715117', purchase_order_number = 'U0000001D')
+def get_seamless_form_data(form_id = 'CO20041000144832633', purchase_order_number = 'U0000001D')
   request_uri = "https://mapc.seamlessdocs.com/api/form/#{form_id}/pipeline"
   timestamp = Time.now.to_i.to_s
   signature = seamless_api_signature(request_uri, 'GET', timestamp)
@@ -111,7 +111,7 @@ def add_seamless_data_to_sharepoint(data)
     conn.adapter Faraday.default_adapter
   end
   # POST /workbook/worksheets/{id|name}/tables/{id|name}/rows/add
-  response = connection.post('/v1.0/sites/mapc365.sharepoint.com,f8550c28-5d48-4bb6-b7e3-67e9ef5505bf,1f0b2eb3-61f4-4cdd-82ce-95daa35ba30f/drive/root:/Purchasing%20and%20Contract%20Process/Purchase%20Orders.xlsx:/workbook/tables/Table1/rows/add') do |req|
+  response = connection.post('/v1.0/sites/mapc365.sharepoint.com,f8550c28-5d48-4bb6-b7e3-67e9ef5505bf,1f0b2eb3-61f4-4cdd-82ce-95daa35ba30f/drive/root:/Purchasing%20and%20Contract%20Process/Purchase%20Orders.xlsx:/workbook/tables/Table13/rows/add') do |req|
     req.body = {
                 "index": nil,
                 "values": data
@@ -119,4 +119,4 @@ def add_seamless_data_to_sharepoint(data)
   end
 end
 
-add_seamless_data_to_sharepoint(get_seamless_form_data('CO20041000144715117', get_last_entry_from_sharepoint))
+add_seamless_data_to_sharepoint(get_seamless_form_data('CO20041000144832633', get_last_entry_from_sharepoint))
