@@ -2,7 +2,7 @@
 lock "~> 3.14.0"
 
 set :application, 'seamless-sharepoint-etl'
-set :repo_url, 'git@egithub.com:MAPC/seamless-sharepoint-etl.git'
+set :repo_url, 'git@github.com:MAPC/seamless-sharepoint-etl.git'
 
 # Default branch is :master
 # ask :branch, `git rev-parse --abbrev-ref HEAD`.chomp
