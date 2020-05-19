@@ -11,6 +11,9 @@ GEM
       sshkit (>= 1.9.0)
     capistrano-bundler (1.6.0)
       capistrano (~> 3.1)
+    capistrano-rvm (0.1.2)
+      capistrano (~> 3.0)
+      sshkit (~> 1.2)
     coderay (1.1.2)
     concurrent-ruby (1.1.6)
     dotenv (2.7.5)
@@ -55,6 +58,7 @@ PLATFORMS
 DEPENDENCIES
   capistrano
   capistrano-bundler
+  capistrano-rvm
   dotenv
   faraday
   logger
